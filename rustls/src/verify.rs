@@ -371,7 +371,7 @@ impl ServerCertVerifier for WebPkiVerifier {
             trace!("Unvalidated OCSP response: {:?}", ocsp_response.to_vec());
         }
 
-        cert.verify_is_valid_for_dns_name(dns_name.0.as_ref())
+        cert.verify_is_valid_for_subject_name(dns_name.0.as_ref().into())
             .map_err(pki_error)
             .map(|_| ServerCertVerified::assertion())
     }
