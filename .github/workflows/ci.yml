@@ -9,7 +9,7 @@ jobs:
     # Don't run duplicate `push` jobs for the repo owner's PRs.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: briansmith/actions-rs-toolchain@v1
@@ -26,7 +26,7 @@ jobs:
     # Don't run duplicate `push` jobs for the repo owner's PRs.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: briansmith/actions-rs-toolchain@v1
@@ -45,7 +45,7 @@ jobs:
     # Don't run duplicate `push` jobs for the repo owner's PRs.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: briansmith/actions-rs-toolchain@v1
@@ -59,10 +59,10 @@ jobs:
             ~/.cargo/bin/cargo-audit
             ~/.cargo/.crates.toml
             ~/.cargo/.crates2.json
-          key: ${{ runner.os }}-v2-cargo-audit-0.15.0
+          key: ${{ runner.os }}-v2-cargo-audit-0.17.4
 
       # With `--locked` `cargo install` complains about using yanked crates.
-      - run: cargo install cargo-audit --vers "0.15.0"
+      - run: cargo install cargo-audit --vers "0.17.4"
 
       - uses: briansmith/actions-checkout@v2
         with:
@@ -76,7 +76,7 @@ jobs:
     # Don't run duplicate `push` jobs for the repo owner's PRs.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: briansmith/actions-rs-toolchain@v1
@@ -105,7 +105,7 @@ jobs:
     # Don't run duplicate `push` jobs for the repo owner's PRs.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     strategy:
       matrix:
@@ -180,6 +180,7 @@ jobs:
           - i686-pc-windows-msvc
           - i686-unknown-linux-gnu
           - i686-unknown-linux-musl
+          - mipsel-unknown-linux-gnu
           - x86_64-pc-windows-gnu
           - x86_64-pc-windows-msvc
           - x86_64-apple-darwin
@@ -193,22 +194,22 @@ jobs:
         rust_channel:
           - stable
           - nightly
-          - 1.52.1 # MSRV
+          - 1.57 # MSRV
           - beta
 
         include:
           - target: aarch64-apple-darwin
-            host_os: macos-latest
+            host_os: macos-12
             # GitHub Actions doesn't have a way to run this target yet.
             cargo_options: --no-run
 
           - target: aarch64-apple-ios
-            host_os: macos-latest
+            host_os: macos-12
             # GitHub Actions doesn't have a way to run this target yet.
             cargo_options: --no-run
 
           - target: aarch64-linux-android
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
             # TODO: https://github.com/briansmith/ring/issues/486
             cargo_options: --no-run
 
@@ -218,21 +219,21 @@ jobs:
             cargo_options: --no-run
 
           - target: aarch64-unknown-linux-gnu
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
           - target: aarch64-unknown-linux-musl
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
           - target: arm-unknown-linux-gnueabihf
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
           - target: armv7-linux-androideabi
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
             # TODO: https://github.com/briansmith/ring/issues/838
             cargo_options: --no-run
 
           - target: armv7-unknown-linux-musleabihf
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
             # TODO: https://github.com/briansmith/ring/issues/1115
             cargo_options: --no-run
 
@@ -240,10 +241,13 @@ jobs:
             host_os: windows-latest
 
           - target: i686-unknown-linux-gnu
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
           - target: i686-unknown-linux-musl
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
+
+          - target: mipsel-unknown-linux-gnu
+            host_os: ubuntu-22.04
 
           - target: x86_64-pc-windows-gnu
             host_os: windows-latest
@@ -252,13 +256,13 @@ jobs:
             host_os: windows-latest
 
           - target: x86_64-apple-darwin
-            host_os: macos-latest
+            host_os: macos-12
 
           - target: x86_64-unknown-linux-musl
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
           - target: x86_64-unknown-linux-gnu
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
     steps:
       - if: ${{ contains(matrix.host_os, 'ubuntu') }}
@@ -280,12 +284,6 @@ jobs:
           target: ${{ matrix.target }}
           toolchain: ${{ matrix.rust_channel }}
 
-      # https://github.com/actions/virtual-environments/issues/2557#issuecomment-769611326
-      - if: ${{ matrix.target == 'aarch64-apple-darwin' }}
-        run: |
-          sudo xcode-select -s /Applications/Xcode_12.4.app &&
-          sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*
-
       - if: ${{ matrix.target == 'aarch64-pc-windows-msvc' }}
         run: |
           echo "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin" >> $GITHUB_PATH
@@ -302,9 +300,9 @@ jobs:
 
       # --all-targets doesn't run doctests: https://github.com/rust-lang/cargo/issues/6669
       # Run doctests only on x86_64 to avoid cross-compilation hassles with `--no-run`.
-      - if: ${{ contains(matrix.target, 'x86_64') }}
+      - if: ${{ !contains(matrix.host_os, 'windows') && contains(matrix.target, 'x86_64') }}
         run: |
-          cargo test -vv --doc --target=${{ matrix.target }} ${{ matrix.cargo_options }} ${{ matrix.features }} ${{ matrix.mode }}
+          mk/cargo.sh test -vv --doc --target=${{ matrix.target }} ${{ matrix.cargo_options }} ${{ matrix.features }} ${{ matrix.mode }}
 
       # Check that all the needed symbol renaming was done.
       # TODO: Do this check on Windows too.
@@ -316,7 +314,7 @@ jobs:
       - if: ${{ matrix.target != 'aarch64-apple-ios' &&
                 !contains(matrix.host_os, 'windows') &&
                 (!contains(matrix.host_os, 'macos') || matrix.mode != '--release') }}
-        run: mk/check-symbol-prefixes.sh
+        run: mk/check-symbol-prefixes.sh --target=${{ matrix.target }}
 
   # XXX: GitHub Actions won't let us test all the combinations of features in
   # the "test" matrix because the resultant matrix would be larger than the
@@ -346,18 +344,18 @@ jobs:
         rust_channel:
           - stable
           - nightly
-          - 1.52.1 # MSRV
+          - 1.57 # MSRV
           - beta
 
         include:
           - target: aarch64-unknown-linux-musl
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
           - target: i686-pc-windows-msvc
             host_os: windows-latest
 
           - target: x86_64-unknown-linux-gnu
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
     steps:
       - if: ${{ contains(matrix.host_os, 'ubuntu') }}
@@ -379,12 +377,6 @@ jobs:
           target: ${{ matrix.target }}
           toolchain: ${{ matrix.rust_channel }}
 
-      # https://github.com/actions/virtual-environments/issues/2557#issuecomment-769611326
-      - if: ${{ matrix.target == 'aarch64-apple-darwin' }}
-        run: |
-          sudo xcode-select -s /Applications/Xcode_12.4.app &&
-          sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*
-
       - if: ${{ matrix.target == 'aarch64-pc-windows-msvc' }}
         run: |
           echo "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin" >> $GITHUB_PATH
@@ -401,9 +393,9 @@ jobs:
 
       # --all-targets doesn't run doctests: https://github.com/rust-lang/cargo/issues/6669
       # Run doctests only on x86_64 to avoid cross-compilation hassles with `--no-run`.
-      - if: ${{ contains(matrix.target, 'x86_64') }}
+      - if: ${{ !contains(matrix.host_os, 'windows') && contains(matrix.target, 'x86_64') }}
         run: |
-          cargo test -vv --doc --target=${{ matrix.target }} ${{ matrix.cargo_options }} ${{ matrix.features }} ${{ matrix.mode }}
+          mk/cargo.sh test -vv --doc --target=${{ matrix.target }} ${{ matrix.cargo_options }} ${{ matrix.features }} ${{ matrix.mode }}
 
       # Check that all the needed symbol renaming was done.
       # TODO: Do this check on Windows too.
@@ -415,7 +407,7 @@ jobs:
       - if: ${{ matrix.target != 'aarch64-apple-ios' &&
           !contains(matrix.host_os, 'windows') &&
           (!contains(matrix.host_os, 'macos') || matrix.mode != '--release') }}
-        run: mk/check-symbol-prefixes.sh
+        run: mk/check-symbol-prefixes.sh --target=${{ matrix.target }}
 
 
   # The wasm32-unknown-unknown targets have a different set of feature sets and
@@ -433,7 +425,7 @@ jobs:
           - --no-default-features --features=wasm32_unknown_unknown_js
 
         host_os:
-          - ubuntu-18.04
+          - ubuntu-22.04
         mode:
           - # debug
           - --release
@@ -444,8 +436,11 @@ jobs:
         target:
           - wasm32-unknown-unknown
         webdriver:
-          - GECKODRIVER=geckodriver
-          - CHROMEDRIVER=chromedriver
+          # TODO: Firefox is not in Ubuntu 22.04 images according to
+          # https://github.com/actions/runner-images/issues/5490 and our
+          # testing.
+          # - GECKODRIVER=$GECKOWEBDRIVER/geckodriver
+          - CHROMEDRIVER=$CHROMEWEBDRIVER/chromedriver
 
     steps:
       - if: ${{ contains(matrix.host_os, 'ubuntu') }}
@@ -470,7 +465,7 @@ jobs:
 
       # Check that all the needed symbol renaming was done.
       # TODO: Do this check on Windows too.
-      - run: mk/check-symbol-prefixes.sh
+      - run: mk/check-symbol-prefixes.sh --target=${{ matrix.target }}
 
   coverage:
     # Don't run duplicate `push` jobs for the repo owner's PRs.
@@ -507,16 +502,16 @@ jobs:
           # https://github.com/rust-lang/rust/issues/79556 and
           # https://github.com/rust-lang/rust/issues/79555 are fixed.
           - target: aarch64-unknown-linux-gnu
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
           # TODO: Use the -musl target after
           # https://github.com/rust-lang/rust/issues/79556 and
           # https://github.com/rust-lang/rust/issues/79555 are fixed.
           - target: i686-unknown-linux-gnu
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
           - target: x86_64-unknown-linux-musl
-            host_os: ubuntu-18.04
+            host_os: ubuntu-22.04
 
           # TODO: Add an ARM target after
           # https://github.com/rust-lang/rust/issues/79555 is fixed. This may
@@ -540,14 +535,11 @@ jobs:
           target: ${{ matrix.target }}
           toolchain: ${{ matrix.rust_channel }}
 
-      - if: ${{ matrix.target == 'aarch64-apple-darwin' }}
-        run: echo "DEVELOPER_DIR=/Applications/Xcode_12.2.app/Contents/Developer" >> $GITHUB_ENV
-
       - if: ${{ !contains(matrix.host_os, 'windows') }}
         run: |
           RING_COVERAGE=1 mk/cargo.sh +${{ matrix.rust_channel }} test -vv --target=${{ matrix.target }} ${{ matrix.cargo_options }} ${{ matrix.features }} ${{ matrix.mode }}
 
-      - uses: briansmith/codecov-codecov-action@v1
+      - uses: briansmith/codecov-codecov-action@v3
         with:
           directory: ./target/${{ matrix.target }}/debug/coverage/reports
           fail_ci_if_error: true

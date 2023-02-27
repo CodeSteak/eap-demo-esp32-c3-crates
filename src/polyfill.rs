@@ -27,10 +27,7 @@ pub fn usize_from_u32(x: u32) -> usize {
 #[macro_use]
 mod chunks_fixed;
 
-pub(crate) mod array;
-
 mod array_flat_map;
-pub(crate) mod array_map;
 
 #[cfg(feature = "alloc")]
 mod leading_zeros_skipped;

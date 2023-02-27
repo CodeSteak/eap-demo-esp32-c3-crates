@@ -37,17 +37,17 @@ const RING_SRCS: &[(&[&str], &str)] = &[
     (&[], "crypto/fipsmodule/aes/aes_nohw.c"),
     (&[], "crypto/fipsmodule/bn/montgomery.c"),
     (&[], "crypto/fipsmodule/bn/montgomery_inv.c"),
-    (&[], "crypto/limbs/limbs.c"),
-    (&[], "crypto/mem.c"),
-    (&[], "crypto/poly1305/poly1305.c"),
-
-    (&[], "crypto/crypto.c"),
     (&[], "crypto/fipsmodule/ec/ecp_nistz.c"),
     (&[], "crypto/fipsmodule/ec/gfp_p256.c"),
     (&[], "crypto/fipsmodule/ec/gfp_p384.c"),
     (&[], "crypto/fipsmodule/ec/p256.c"),
+    (&[], "crypto/limbs/limbs.c"),
+    (&[], "crypto/mem.c"),
+    (&[], "crypto/poly1305/poly1305.c"),
 
-    (&[X86_64, X86], "crypto/cpu-intel.c"),
+    (&[AARCH64, ARM, X86_64, X86], "crypto/crypto.c"),
+
+    (&[X86_64, X86], "crypto/cpu_intel.c"),
 
     (&[X86], "crypto/fipsmodule/aes/asm/aesni-x86.pl"),
     (&[X86], "crypto/fipsmodule/aes/asm/vpaes-x86.pl"),
@@ -60,13 +60,14 @@ const RING_SRCS: &[(&[&str], &str)] = &[
     (&[X86_64], "crypto/fipsmodule/aes/asm/vpaes-x86_64.pl"),
     (&[X86_64], "crypto/fipsmodule/bn/asm/x86_64-mont.pl"),
     (&[X86_64], "crypto/fipsmodule/bn/asm/x86_64-mont5.pl"),
-    (&[X86_64], "crypto/fipsmodule/ec/p256-x86_64.c"),
     (&[X86_64], "crypto/fipsmodule/ec/asm/p256-x86_64-asm.pl"),
     (&[X86_64], "crypto/fipsmodule/modes/asm/aesni-gcm-x86_64.pl"),
     (&[X86_64], "crypto/fipsmodule/modes/asm/ghash-x86_64.pl"),
     (&[X86_64], "crypto/poly1305/poly1305_vec.c"),
     (&[X86_64], SHA512_X86_64),
     (&[X86_64], "crypto/cipher_extra/asm/chacha20_poly1305_x86_64.pl"),
+
+    (&[AARCH64, X86_64], "crypto/fipsmodule/ec/p256-nistz.c"),
 
     (&[AARCH64, ARM], "crypto/fipsmodule/aes/asm/aesv8-armx.pl"),
     (&[AARCH64, ARM], "crypto/fipsmodule/modes/asm/ghashv8-armx.pl"),
@@ -82,9 +83,11 @@ const RING_SRCS: &[(&[&str], &str)] = &[
     (&[ARM], "crypto/fipsmodule/sha/asm/sha256-armv4.pl"),
     (&[ARM], "crypto/fipsmodule/sha/asm/sha512-armv4.pl"),
 
+    (&[AARCH64], "crypto/chacha/asm/chacha-armv8.pl"),
+    (&[AARCH64], "crypto/cipher_extra/asm/chacha20_poly1305_armv8.pl"),
     (&[AARCH64], "crypto/fipsmodule/aes/asm/vpaes-armv8.pl"),
     (&[AARCH64], "crypto/fipsmodule/bn/asm/armv8-mont.pl"),
-    (&[AARCH64], "crypto/chacha/asm/chacha-armv8.pl"),
+    (&[AARCH64], "crypto/fipsmodule/ec/asm/p256-armv8-asm.pl"),
     (&[AARCH64], "crypto/fipsmodule/modes/asm/ghash-neon-armv8.pl"),
     (&[AARCH64], SHA512_ARMV8),
 ];
@@ -663,8 +666,8 @@ fn cc(file: &Path, ext: &str, target: &Target, include_dir: &Path, out_file: &Pa
 
 fn nasm(file: &Path, arch: &str, include_dir: &Path, out_file: &Path) -> Command {
     let oformat = match arch {
-        "x86_64" => ("win64"),
-        "x86" => ("win32"),
+        "x86_64" => "win64",
+        "x86" => "win32",
         _ => panic!("unsupported arch: {}", arch),
     };
 
@@ -875,7 +878,7 @@ fn generate_prefix_symbols_header(
     std::fs::create_dir_all(&dir)?;
 
     let path = dir.join(filename);
-    let mut file = std::fs::File::create(&path)?;
+    let mut file = std::fs::File::create(path)?;
 
     let filename_ident = filename.replace('.', "_").to_uppercase();
     writeln!(
@@ -904,6 +907,18 @@ fn generate_prefix_symbols_header(
 }
 
 fn prefix_all_symbols(pp: char, prefix_prefix: &str, prefix: &str) -> String {
+    // Rename some nistz256 assembly functions to match the names of their
+    // polyfills.
+    static SYMBOLS_TO_RENAME: &[(&str, &str)] = &[
+        ("ecp_nistz256_point_double", "p256_point_double"),
+        ("ecp_nistz256_point_add", "p256_point_add"),
+        ("ecp_nistz256_point_add_affine", "p256_point_add_affine"),
+        ("ecp_nistz256_ord_mul_mont", "p256_scalar_mul_mont"),
+        ("ecp_nistz256_ord_sqr_mont", "p256_scalar_sqr_rep_mont"),
+        ("ecp_nistz256_mul_mont", "p256_mul_mont"),
+        ("ecp_nistz256_sqr_mont", "p256_sqr_mont"),
+    ];
+
     static SYMBOLS_TO_PREFIX: &[&str] = &[
         "CRYPTO_poly1305_finish",
         "CRYPTO_poly1305_finish_neon",
@@ -962,9 +977,9 @@ fn prefix_all_symbols(pp: char, prefix_prefix: &str, prefix: &str) -> String {
         "gcm_init_neon",
         "limbs_mul_add_limb",
         "little_endian_bytes_from_scalar",
-        "nistz256_neg",
-        "nistz256_select_w5",
-        "nistz256_select_w7",
+        "ecp_nistz256_neg",
+        "ecp_nistz256_select_w5",
+        "ecp_nistz256_select_w7",
         "nistz384_point_add",
         "nistz384_point_double",
         "nistz384_point_mul",
@@ -1007,6 +1022,17 @@ fn prefix_all_symbols(pp: char, prefix_prefix: &str, prefix: &str) -> String {
     ];
 
     let mut out = String::new();
+
+    for (old, new) in SYMBOLS_TO_RENAME {
+        let line = format!(
+            "{pp}define {prefix_prefix}{old} {prefix_prefix}{new}\n",
+            pp = pp,
+            prefix_prefix = prefix_prefix,
+            old = old,
+            new = new
+        );
+        out += &line;
+    }
 
     for symbol in SYMBOLS_TO_PREFIX {
         let line = format!(

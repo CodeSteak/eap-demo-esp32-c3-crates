@@ -17,6 +17,16 @@
 set -eux -o pipefail
 IFS=$'\n\t'
 
+case "$OSTYPE" in
+darwin*)
+  nm_exe=nm
+  ;;
+*)
+  llvm_version=15
+  nm_exe=llvm-nm-$llvm_version
+  ;;
+esac
+
 # TODO: This should only look in one target directory.
 # TODO: This isn't as strict as it should be.
 #
@@ -26,13 +36,8 @@ IFS=$'\n\t'
 # This is very liberal in filtering out symbols that "look like"
 # Rust-compiler-generated symbols.
 find target -type f -name libring-*.rlib | while read -r infile; do
-  tmpfile=$infile-without-lib-rmeta
-  cp "$infile" "$tmpfile"
-  # `nm` doesn't understand `lib.rmeta`.
-  ar d "$tmpfile" lib.rmeta
-  bad=$(nm --defined-only --extern-only --print-file-name "$tmpfile" \
-    | ( grep -v -E " . _?(ring_core_|__rustc|_ZN|DW.ref.rust_eh_personality)" || [[ $? == 1 ]] ))
-  rm "$tmpfile"
+  bad=$($nm_exe --defined-only --extern-only --print-file-name "$infile" \
+    | ( grep -v -E " . _?(__imp__ZN4ring|ring_core_|__rustc|_ZN|DW.ref.rust_eh_personality)" || [[ $? == 1 ]] ))
   if [ ! -z "${bad-}" ]; then
     echo "$bad"
     exit 1

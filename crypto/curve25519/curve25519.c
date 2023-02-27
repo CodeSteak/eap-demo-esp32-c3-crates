@@ -36,8 +36,16 @@
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Winline"
+#endif
+
 // Various pre-computed constants.
 #include "./curve25519_tables.h"
+
+#if defined(OPENSSL_NO_ASM)
+#define FIAT_25519_NO_ASM
+#endif
 
 #if defined(BORINGSSL_CURVE25519_64BIT)
 #if defined(__GNUC__)
@@ -476,27 +484,21 @@ static void fe_pow22523(fe *out, const fe *z) {
 int x25519_ge_frombytes_vartime(ge_p3 *h, const uint8_t s[32]) {
   fe u;
   fe_loose v;
-  fe v3;
+  fe w;
   fe vxx;
   fe_loose check;
 
   fe_frombytes(&h->Y, s);
   fe_1(&h->Z);
-  fe_sq_tt(&v3, &h->Y);
-  fe_mul_ttt(&vxx, &v3, &d);
-  fe_sub(&v, &v3, &h->Z);  // u = y^2-1
+  fe_sq_tt(&w, &h->Y);
+  fe_mul_ttt(&vxx, &w, &d);
+  fe_sub(&v, &w, &h->Z);  // u = y^2-1
   fe_carry(&u, &v);
   fe_add(&v, &vxx, &h->Z);  // v = dy^2+1
 
-  fe_sq_tl(&v3, &v);
-  fe_mul_ttl(&v3, &v3, &v);  // v3 = v^3
-  fe_sq_tt(&h->X, &v3);
-  fe_mul_ttl(&h->X, &h->X, &v);
-  fe_mul_ttt(&h->X, &h->X, &u);  // x = uv^7
-
-  fe_pow22523(&h->X, &h->X);  // x = (uv^7)^((q-5)/8)
-  fe_mul_ttt(&h->X, &h->X, &v3);
-  fe_mul_ttt(&h->X, &h->X, &u);  // x = uv^3(uv^7)^((q-5)/8)
+  fe_mul_ttl(&w, &u, &v);  // w = u*v
+  fe_pow22523(&h->X, &w);  // x = w^((q-5)/8)
+  fe_mul_ttt(&h->X, &h->X, &u);  // x = u*w^((q-5)/8)
 
   fe_sq_tt(&vxx, &h->X);
   fe_mul_ttl(&vxx, &vxx, &v);
