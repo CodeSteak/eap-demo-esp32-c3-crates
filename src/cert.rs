@@ -66,7 +66,7 @@ pub(crate) fn parse_cert_internal<'a>(
         // TODO: In mozilla::pkix, the comparison is done based on the
         // normalized value (ignoring whether or not there is an optional NULL
         // parameter for RSA-based algorithms), so this may be too strict.
-        if signature != signed_data.algorithm {
+        if !crate::util::compare_input(&signature,  &signed_data.algorithm) {
             return Err(Error::SignatureAlgorithmMismatch);
         }
 

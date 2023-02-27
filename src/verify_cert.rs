@@ -65,7 +65,8 @@ pub(crate) fn build_chain(
 
     let result = loop_while_non_fatal_error(trust_anchors, |trust_anchor: &TrustAnchor| {
         let trust_anchor_subject = untrusted::Input::from(trust_anchor.subject);
-        if cert.issuer != trust_anchor_subject {
+
+        if !crate::util::compare_input(&cert.issuer, &trust_anchor_subject) {
             return Err(Error::UnknownIssuer);
         }
 
@@ -93,15 +94,16 @@ pub(crate) fn build_chain(
         let potential_issuer =
             cert::parse_cert(untrusted::Input::from(cert_der), EndEntityOrCa::Ca(cert))?;
 
-        if potential_issuer.subject != cert.issuer {
+        if !crate::util::compare_input(&potential_issuer.subject, &cert.issuer)  {
             return Err(Error::UnknownIssuer);
         }
 
         // Prevent loops; see RFC 4158 section 5.2.
         let mut prev = cert;
         loop {
-            if potential_issuer.spki.value() == prev.spki.value()
-                && potential_issuer.subject == prev.subject
+            
+            if crate::util::compare_input(&potential_issuer.spki.value(), &prev.spki.value())
+                && crate::util::compare_input(&potential_issuer.subject, &prev.subject)
             {
                 return Err(Error::UnknownIssuer);
             }
@@ -260,10 +262,17 @@ fn check_basic_constraints(
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy)]
 pub(crate) struct KeyPurposeId {
     oid_value: untrusted::Input<'static>,
 }
+
+impl PartialEq for KeyPurposeId {
+    fn eq(&self, other: &Self) -> bool {
+        crate::util::compare_input(&self.oid_value, &other.oid_value)
+    }
+}
+
 
 // id-pkix            OBJECT IDENTIFIER ::= { 1 3 6 1 5 5 7 }
 // id-kp              OBJECT IDENTIFIER ::= { id-pkix 3 }
@@ -310,7 +319,7 @@ fn check_eku(
         Some(input) => {
             loop {
                 let value = der::expect_tag_and_get_value(input, der::Tag::OID)?;
-                if value == required_eku_if_present.oid_value {
+                if crate::util::compare_input(&value, &required_eku_if_present.oid_value) {
                     input.skip_to_end();
                     break;
                 }
@@ -330,7 +339,7 @@ fn check_eku(
             // important that id-kp-OCSPSigning is explicit so that a normal
             // end-entity certificate isn't able to sign trusted OCSP responses
             // for itself or for other certificates issued by its issuing CA.
-            if required_eku_if_present.oid_value == EKU_OCSP_SIGNING.oid_value {
+            if crate::util::compare_input(&required_eku_if_present.oid_value, &EKU_OCSP_SIGNING.oid_value) {
                 return Err(Error::RequiredEkuNotFound);
             }
 

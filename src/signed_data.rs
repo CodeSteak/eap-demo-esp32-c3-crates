@@ -312,7 +312,7 @@ struct AlgorithmIdentifier {
 
 impl AlgorithmIdentifier {
     fn matches_algorithm_id_value(&self, encoded: untrusted::Input) -> bool {
-        encoded == self.asn1_id_value
+        crate::util::compare_input(&encoded,  &self.asn1_id_value)
     }
 }
 
@@ -459,11 +459,12 @@ mod tests {
     fn test_verify_signed_data_signature_outer(file_contents: &[u8], expected_error: Error) {
         let tsd = parse_test_signed_data(file_contents);
         let signature = untrusted::Input::from(&tsd.signature);
+
         assert_eq!(
-            Err(expected_error),
+            expected_error,
             signature.read_all(Error::BadDer, |input| {
                 der::bit_string_with_no_unused_bits(input)
-            })
+            }).unwrap_err()
         );
     }
 
@@ -481,10 +482,10 @@ mod tests {
         let tsd = parse_test_signed_data(file_contents);
         let spki = untrusted::Input::from(&tsd.spki);
         assert_eq!(
-            Err(expected_error),
+            expected_error,
             spki.read_all(Error::BadDer, |input| {
                 der::expect_tag_and_get_value(input, der::Tag::Sequence)
-            })
+            }).unwrap_err()
         );
     }
 

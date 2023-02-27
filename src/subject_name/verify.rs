@@ -407,7 +407,7 @@ fn common_name(input: untrusted::Input) -> Result<Option<untrusted::Input>, Erro
         der::nested(tagged, der::Tag::Sequence, Error::BadDer, |tagged| {
             while !tagged.at_end() {
                 let name_oid = der::expect_tag_and_get_value(tagged, der::Tag::OID)?;
-                if name_oid == COMMON_NAME {
+                if crate::util::compare_input(&name_oid,&COMMON_NAME) {
                     return der::expect_tag_and_get_value(tagged, der::Tag::UTF8String).map(Some);
                 } else {
                     // discard unused name value
