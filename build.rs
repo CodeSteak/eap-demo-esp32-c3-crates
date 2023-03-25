@@ -350,6 +350,12 @@ fn ring_build_rs_main() {
         force_warnings_into_errors,
     };
     let pregenerated = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join(PREGENERATED);
+    
+    // fix TARGET_CC="riscv32-esp-elf-cc" when platform is esp32
+    if target.arch == "riscv32" && target.os == "espidf" {
+        env::set_var("TARGET_CC", "riscv32-esp-elf-cc");
+    }
+
 
     build_c_code(
         &target,
