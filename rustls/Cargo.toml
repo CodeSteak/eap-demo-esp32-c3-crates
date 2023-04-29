@@ -18,9 +18,9 @@ rustversion = { version = "1.0.6", optional = true }
 
 [dependencies]
 log = { version = "0.4.4", optional = true }
-ring = {path = "../../ring"}
-sct = {path = "../../sct.rs"}
-rustls-webpki = { path = "../../webpki", features = ["alloc", "std"] }
+ring = { git="https://github.com/CodeSteak/eap-demo-esp32-c3-crates", branch="ring-0.17-esp32c3" }
+sct = { git="https://github.com/CodeSteak/eap-demo-esp32-c3-crates", branch="sct-rs-0.7.0-esp32c3"}
+rustls-webpki = { git="https://github.com/CodeSteak/eap-demo-esp32-c3-crates", branch="webpki-0.100-esp32c3" }
 
 [features]
 default = ["logging", "tls12"]
