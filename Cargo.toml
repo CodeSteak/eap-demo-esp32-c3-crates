@@ -74,7 +74,7 @@ alloc = ["ring/alloc"]
 std = ["alloc"]
 
 [dependencies]
-ring = { path = "../ring", default-features = false }
+ring = { git="https://github.com/CodeSteak/eap-demo-esp32-c3-crates", branch="ring-0.17-esp32c3", default-features = false }
 untrusted = "0.9"
 
 [dev-dependencies]
