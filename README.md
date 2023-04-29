@@ -4,10 +4,10 @@ They are build a around a slightly modified version of ring
 to be used on a ESP32-C3.
 
 This includes:
-* (ring)[https://github.com/CodeSteak/eap-demo-esp32-c3-crates/tree/ring-0.17-esp32c3]
-* (rustls)[https://github.com/CodeSteak/eap-demo-esp32-c3-crates/tree/rustls-0.20.8]
-* (sct)[https://github.com/CodeSteak/eap-demo-esp32-c3-crates/tree/sct-rs-0.7.0-esp32c3]
-* (rustls-webpki)[https://github.com/CodeSteak/eap-demo-esp32-c3-crates/tree/webpki-0.100-esp32c3]
+* [ring](https://github.com/CodeSteak/eap-demo-esp32-c3-crates/tree/ring-0.17-esp32c3)
+* [rustls](https://github.com/CodeSteak/eap-demo-esp32-c3-crates/tree/rustls-0.20.8)
+* [sct](https://github.com/CodeSteak/eap-demo-esp32-c3-crates/tree/sct-rs-0.7.0-esp32c3)
+* [rustls-webpki](https://github.com/CodeSteak/eap-demo-esp32-c3-crates/tree/webpki-0.100-esp32c3)
 
 
 
