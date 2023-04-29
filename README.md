@@ -1,3 +1,12 @@
+This is a slightly modified version of ring, to be compatable with RISC-V-Microcontrollers. 
+It's an updated version of https://github.com/briansmith/ring
+
+*DO NOT USE IN PRODUCTION!*
+====
+This was just for a small demo, and i don't know what i'm doing.
+
+-------
+
 THE SOFTWARE IS PROVIDED "AS IS" AND BRIAN SMITH AND THE AUTHORS DISCLAIM
 ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
 OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL BRIAN SMITH OR THE AUTHORS
